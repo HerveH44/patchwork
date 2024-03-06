@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
+import { randomPiece } from "./shapeInventory";
 
 const Canvas = props => {
   const canvasRef = useRef(null);
@@ -14,20 +15,20 @@ const Canvas = props => {
 };
 
 function useBoard() {
-  const [objet, setObjet] = useState(
-    {
-      color: 'blue',
-      points: [
-        [0, 0],
-        [0, 1],
-        [0, 2],
-        [1, 1]
-      ]
-    });
+  const [objet, setObjet] = useState(randomPiece());
+  const [pieces, setPieces] = useState([]);
 
-  function renderBackground(context) {
-    context.fillStyle = '#b6b61c'
+  function renderBackground(canvas) {
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#b6b61c';
     context.fillRect(0, 0, context.canvas.width, context.canvas.height)
+
+    pieces.forEach(piece => {
+      drawShape(canvas, {
+        ...piece,
+        color: 'red'
+      })
+    });
   }
 
   function drawPixel(canvas, color, x, y) {
@@ -41,50 +42,100 @@ function useBoard() {
   }
 
   function drawShape(canvas, shape) {
-    const { points, color } = shape;
+    const { points, color, position: { x, y } } = shape;
 
     for (const point of points) {
-      drawPixel(canvas, color, point[0], point[1])
+      drawPixel(canvas, color, point[0] + x, point[1] + y)
     }
+  }
+
+  function validPosition({ position: { x, y }, points }) {
+    return !points.some(point => {
+      if (point[0] + x > 8) return true; // can't move too far right
+      if (point[0] + x < 0) return true; // can't move too far left
+      if (point[1] + y > 8) return true; // can't move too far down
+      if (point[1] + y < 0) return true; // can't move too far up
+      return pieces.some(piece => piece.points.some(p => {
+        const isSameX = (p[0] + piece.position.x) === (point[0] + x);
+        const isSameY = ((p[1] + piece.position.y) === (point[1] + y));
+        return isSameX && isSameY;
+      }));
+
+    });
+  }
+
+  function movePosition(x = 0, y = 0) {
+    const newObjet = {
+      ...objet,
+      position: {
+        x: x + objet.position.x,
+        y: y + objet.position.y
+      }
+    };
+    if (!validPosition(newObjet)) { return; }
+    setObjet(newObjet);
+  }
+
+  function rotateObjet() {
+    const { width, height, points } = objet;
+
+    const tX = Math.floor(width / 2);
+    const tY = Math.floor(height / 2);
+    const newPoints = points.map(([x, y]) => {
+      const x0 = x - tX;
+      const y0 = y - tY;
+
+      let xPrime = - y0;
+      let yPrime = x0;
+
+      xPrime += tX;
+      yPrime += tY;
+
+      return [xPrime, yPrime];
+    })
+
+    const newObjet = {
+      ...objet,
+      points: newPoints
+    }
+
+    if (!validPosition(newObjet)) { return; }
+    setObjet(newObjet);
+
   }
 
 
   function onKeyDown(e) {
     switch (e.key) {
       case 'ArrowLeft': {
-        const newObjet = {
-          ...objet,
-          points: objet.points.map(point => [point[0] - 1, point[1]])
-        };
-        setObjet(newObjet);
+        movePosition(-1)
         break;
       }
       case 'ArrowRight': {
-        const newObjet = {
-          ...objet,
-          points: objet.points.map(point => [point[0] + 1, point[1]])
-        };
-        setObjet(newObjet);
+        movePosition(+1);
         break;
       }
       case 'ArrowUp': {
-        const newObjet = {
-          ...objet,
-          points: objet.points.map(point => [point[0], point[1] - 1])
-        };
-        setObjet(newObjet);
+        movePosition(0, -1);
         break;
       }
       case 'ArrowDown': {
-        const newObjet = {
-          ...objet,
-          points: objet.points.map(point => [point[0], point[1] + 1])
-        };
-        setObjet(newObjet);
+        movePosition(0, +1);
         break;
       }
-
-      default: break;
+      case 'r': {
+        rotateObjet();
+        break;
+      }
+      case 'Enter': {
+        setPieces([
+          ...pieces, objet
+        ])
+        setObjet(randomPiece());
+        break;
+      }
+      default:
+        console.log(e.key);
     }
     e.preventDefault();
   }
@@ -92,7 +143,7 @@ function useBoard() {
 
   function drawCanvas(canvas) {
     if (!canvas) return;
-    renderBackground(canvas.getContext('2d'));
+    renderBackground(canvas);
     drawShape(canvas, objet);
   }
 
