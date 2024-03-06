@@ -51,23 +51,27 @@ const Canvas = props => {
   function onKeyDown(e) {
     switch (e.key) {
       case 'ArrowLeft': {
-        // il me faut un objet sur lequel interagir
-        objet.points = objet.points.map(point => [point[0] + 1, 0]);
-        console.log("move left");
+        objet.points = objet.points.map(point => [point[0] - 1, point[1]]);
         renderBackground();
         drawShape(objet);
         break;
       }
       case 'ArrowRight': {
-        console.log("move right");
+        objet.points = objet.points.map(point => [point[0] + 1, point[1]]);
+        renderBackground();
+        drawShape(objet);
         break;
       }
       case 'ArrowUp': {
-        console.log("move up");
+        objet.points = objet.points.map(point => [point[0], point[1] - 1]);
+        renderBackground();
+        drawShape(objet);
         break;
       }
       case 'ArrowDown': {
-        console.log("move down");
+        objet.points = objet.points.map(point => [point[0], point[1] + 1]);
+        renderBackground();
+        drawShape(objet);
         break;
       }
 
