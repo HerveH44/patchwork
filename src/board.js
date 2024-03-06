@@ -1,86 +1,105 @@
-import { render } from "@testing-library/react";
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 
 const Canvas = props => {
-
   const canvasRef = useRef(null);
-
-  const objet = {
-    color: 'blue',
-    points: [
-      [0, 0]
-    ]
-  };
-
-  function drawPixel(color, x, y) {
-    const canvas = canvasRef.current
-    const context = canvas.getContext('2d')
-    context.fillStyle = color
-
-    const pixel_width = props.width / 9;
-    const pixel_height = props.height / 9;
-    context.fillRect(x * pixel_width, y * pixel_height, pixel_width, pixel_height);
-
-  }
-
-  function drawShape(shape) {
-    const { points, color } = shape;
-
-    for (const point of points) {
-      drawPixel(color, point[0], point[1])
-    }
-  }
-
-  useEffect(() => {
-    console.log("effect!!")
-    renderBackground();
-    drawShape(objet);
-  }, [props, objet, drawShape]);
-
-  function renderBackground() {
-    const canvas = canvasRef.current
-    const context = canvas.getContext('2d')
-    context.fillStyle = '#b6b61c'
-    context.fillRect(0, 0, context.canvas.width, context.canvas.height)
-  }
+  const { drawCanvas, onKeyDown } = useBoard();
+  useEffect(focusBoard, []);
 
   function focusBoard() {
     canvasRef.current.focus();
   }
 
+  drawCanvas(canvasRef.current);
+  return <canvas tabIndex={0} ref={canvasRef} {...props} onKeyDown={onKeyDown} />
+};
+
+function useBoard() {
+  const [objet, setObjet] = useState(
+    {
+      color: 'blue',
+      points: [
+        [0, 0],
+        [0, 1],
+        [0, 2],
+        [1, 1]
+      ]
+    });
+
+  function renderBackground(context) {
+    context.fillStyle = '#b6b61c'
+    context.fillRect(0, 0, context.canvas.width, context.canvas.height)
+  }
+
+  function drawPixel(canvas, color, x, y) {
+    const context = canvas.getContext('2d');
+    const pixel_width = canvas.width / 9;
+    const pixel_height = canvas.height / 9;
+
+    context.fillStyle = color;
+    context.fillRect(x * pixel_width, y * pixel_height, pixel_width, pixel_height);
+
+  }
+
+  function drawShape(canvas, shape) {
+    const { points, color } = shape;
+
+    for (const point of points) {
+      drawPixel(canvas, color, point[0], point[1])
+    }
+  }
+
+
   function onKeyDown(e) {
     switch (e.key) {
       case 'ArrowLeft': {
-        objet.points = objet.points.map(point => [point[0] - 1, point[1]]);
-        renderBackground();
-        drawShape(objet);
+        const newObjet = {
+          ...objet,
+          points: objet.points.map(point => [point[0] - 1, point[1]])
+        };
+        setObjet(newObjet);
         break;
       }
       case 'ArrowRight': {
-        objet.points = objet.points.map(point => [point[0] + 1, point[1]]);
-        renderBackground();
-        drawShape(objet);
+        const newObjet = {
+          ...objet,
+          points: objet.points.map(point => [point[0] + 1, point[1]])
+        };
+        setObjet(newObjet);
         break;
       }
       case 'ArrowUp': {
-        objet.points = objet.points.map(point => [point[0], point[1] - 1]);
-        renderBackground();
-        drawShape(objet);
+        const newObjet = {
+          ...objet,
+          points: objet.points.map(point => [point[0], point[1] - 1])
+        };
+        setObjet(newObjet);
         break;
       }
       case 'ArrowDown': {
-        objet.points = objet.points.map(point => [point[0], point[1] + 1]);
-        renderBackground();
-        drawShape(objet);
+        const newObjet = {
+          ...objet,
+          points: objet.points.map(point => [point[0], point[1] + 1])
+        };
+        setObjet(newObjet);
         break;
       }
 
       default: break;
     }
+    e.preventDefault();
   }
 
-  useEffect(focusBoard, []);
-  return <canvas tabIndex={0} ref={canvasRef} {...props} onKeyDown={onKeyDown} />
-};
+
+  function drawCanvas(canvas) {
+    if (!canvas) return;
+    renderBackground(canvas.getContext('2d'));
+    drawShape(canvas, objet);
+  }
+
+  return {
+    onKeyDown,
+    drawCanvas,
+  }
+}
 
 export default Canvas;
