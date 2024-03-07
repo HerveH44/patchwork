@@ -55,12 +55,7 @@ function useBoard() {
       if (point[0] + x < 0) return true; // can't move too far left
       if (point[1] + y > 8) return true; // can't move too far down
       if (point[1] + y < 0) return true; // can't move too far up
-      return pieces.some(piece => piece.points.some(p => {
-        const isSameX = (p[0] + piece.position.x) === (point[0] + x);
-        const isSameY = ((p[1] + piece.position.y) === (point[1] + y));
-        return isSameX && isSameY;
-      }));
-
+      return false;
     });
   }
 
@@ -128,6 +123,18 @@ function useBoard() {
         break;
       }
       case 'Enter': {
+        const { points, position: { x, y } } = objet;
+
+        function isColliding(point) {
+          return pieces.some(piece => piece.points.some(p => {
+            const isSameX = (p[0] + piece.position.x) === (point[0] + x);
+            const isSameY = ((p[1] + piece.position.y) === (point[1] + y));
+            return isSameX && isSameY;
+          }));
+        }
+
+        if (points.some(isColliding)) return;
+
         setPieces([
           ...pieces, objet
         ])
