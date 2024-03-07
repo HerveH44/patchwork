@@ -14,6 +14,42 @@ const SHAPES = [
     points: [
       [0, 0],
       [0, 1],
+    ],
+    width: 1,
+    height: 2
+  },
+  {
+    points: [
+      [0, 0],
+      [0, 1],
+      [0, 2],
+    ],
+    width: 1,
+    height: 3
+  },
+  {
+    points: [
+      [0, 0],
+      [0, 1],
+      [0, 2],
+      [0, 3],
+    ],
+    width: 1,
+    height: 4
+  },
+  {
+    points: [
+      [0, 0],
+      [0, 1],
+      [1, 0],
+    ],
+    width: 2,
+    height: 2
+  },
+  { // that one is same as before as there are 2 in the games with different costs
+    points: [
+      [0, 0],
+      [0, 1],
       [1, 0],
     ],
     width: 2,
