@@ -1,32 +1,44 @@
-import React, { useRef, useEffect, useState } from "react";
-import { randomPiece } from "./shapeInventory";
+import React, { useRef, useEffect, useContext } from "react";
+import { GameContext } from "./App";
 
 const Canvas = props => {
   const canvasRef = useRef(null);
-  const { drawCanvas, onKeyDown } = useBoard();
+  const { drawCanvas, onKeyDown, resetBoard } = useBoard();
   useEffect(focusBoard, []);
+  useEffect(draw, [drawCanvas]);
 
   function focusBoard() {
     canvasRef.current.focus();
   }
 
-  drawCanvas(canvasRef.current);
-  return <canvas tabIndex={0} ref={canvasRef} {...props} onKeyDown={onKeyDown} />
+  function draw() {
+    drawCanvas(canvasRef.current);
+    focusBoard();
+  }
+
+  return (
+    <div>
+      <canvas tabIndex={0} ref={canvasRef} {...props} onKeyDown={onKeyDown} />
+      <button onClick={() => {
+        resetBoard();
+        focusBoard();
+
+      }}>RESET</button>
+    </div>
+  );
 };
 
 function useBoard() {
-  const [objet, setObjet] = useState(randomPiece());
-  const [pieces, setPieces] = useState([]);
+  const { setSelectedPatch, validatePatch, selectedPatch, pickedPatches, reset: resetBoard } = useContext(GameContext);
 
   function renderBackground(canvas) {
     const context = canvas.getContext('2d');
     context.fillStyle = '#b6b61c';
     context.fillRect(0, 0, context.canvas.width, context.canvas.height)
 
-    pieces.forEach(piece => {
+    pickedPatches.forEach(piece => {
       drawShape(canvas, {
         ...piece,
-        color: 'red'
       })
     });
   }
@@ -42,6 +54,7 @@ function useBoard() {
   }
 
   function drawShape(canvas, shape) {
+    if (!shape) return;
     const { points, color, position: { x, y } } = shape;
 
     for (const point of points) {
@@ -61,18 +74,18 @@ function useBoard() {
 
   function movePosition(x = 0, y = 0) {
     const newObjet = {
-      ...objet,
+      ...selectedPatch,
       position: {
-        x: x + objet.position.x,
-        y: y + objet.position.y
+        x: x + selectedPatch.position.x,
+        y: y + selectedPatch.position.y
       }
     };
     if (!validPosition(newObjet)) { return; }
-    setObjet(newObjet);
+    setSelectedPatch(newObjet);
   }
 
   function rotateObjet() {
-    const { width, height, points } = objet;
+    const { width, height, points } = selectedPatch;
 
     const tX = Math.floor(width / 2);
     const tY = Math.floor(height / 2);
@@ -90,17 +103,17 @@ function useBoard() {
     })
 
     const newObjet = {
-      ...objet,
+      ...selectedPatch,
       points: newPoints
     }
 
     if (!validPosition(newObjet)) { return; }
-    setObjet(newObjet);
-
+    setSelectedPatch(newObjet);
   }
 
 
   function onKeyDown(e) {
+    if (selectedPatch == null) return;
     switch (e.key) {
       case 'ArrowLeft': {
         movePosition(-1)
@@ -122,11 +135,19 @@ function useBoard() {
         rotateObjet();
         break;
       }
+      case 'f': {
+        const newPoints = selectedPatch.points.map(point => [-point[0], point[1]]);
+        const newObjet = { ...selectedPatch, points: newPoints };
+        if (validPosition(newObjet)) {
+          setSelectedPatch(newObjet);
+        }
+        break;
+      }
       case 'Enter': {
-        const { points, position: { x, y } } = objet;
+        const { points, position: { x, y } } = selectedPatch;
 
         function isColliding(point) {
-          return pieces.some(piece => piece.points.some(p => {
+          return pickedPatches.some(piece => piece.points.some(p => {
             const isSameX = (p[0] + piece.position.x) === (point[0] + x);
             const isSameY = ((p[1] + piece.position.y) === (point[1] + y));
             return isSameX && isSameY;
@@ -135,10 +156,7 @@ function useBoard() {
 
         if (points.some(isColliding)) return;
 
-        setPieces([
-          ...pieces, objet
-        ])
-        setObjet(randomPiece());
+        validatePatch();
         break;
       }
       default:
@@ -151,12 +169,13 @@ function useBoard() {
   function drawCanvas(canvas) {
     if (!canvas) return;
     renderBackground(canvas);
-    drawShape(canvas, objet);
+    drawShape(canvas, selectedPatch);
   }
 
   return {
     onKeyDown,
     drawCanvas,
+    resetBoard,
   }
 }
 
